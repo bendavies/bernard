@@ -57,7 +57,7 @@ class RoundRobinQueue implements Queue
 
         while (count($checked) < count($this->queues)) {
             $queue = current($this->queues);
-            $envelope = $queue->dequeue();
+            $envelope = $queue->dequeue(0);
             if (false === next($this->queues)) {
                 reset($this->queues);
             }
@@ -67,6 +67,8 @@ class RoundRobinQueue implements Queue
             } else {
                 $checked[] = $queue;
             }
+
+            usleep(10000);
         }
 
         return $envelope;
