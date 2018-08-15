@@ -91,7 +91,7 @@ class FlatFileDriver implements \Bernard\Driver
      */
     public function popMessage($queueName, $duration = 5)
     {
-        $runtime = microtime(true) + $duration;
+        $startAt = microtime(true);
         $queueDir = $this->getQueueDirectory($queueName);
 
         $it = new \GlobIterator($queueDir.DIRECTORY_SEPARATOR.'*.job', \FilesystemIterator::KEY_AS_FILENAME);
@@ -99,7 +99,7 @@ class FlatFileDriver implements \Bernard\Driver
 
         natsort($files);
 
-        while (microtime(true) < $runtime) {
+        while (true) {
             if ($files) {
                 $id = array_pop($files);
                 if (@rename($queueDir.DIRECTORY_SEPARATOR.$id, $queueDir.DIRECTORY_SEPARATOR.$id.'.proceed')) {
@@ -107,10 +107,12 @@ class FlatFileDriver implements \Bernard\Driver
                 }
             }
 
-            usleep(1000);
-        }
+            usleep(10000);
 
-        return array(null, null);
+            if ((microtime(true) - $startAt) >= $duration) {
+                return array(null, null);
+            }
+        }
     }
 
     /**

@@ -79,9 +79,9 @@ class DoctrineDriver implements \Bernard\Driver
      */
     public function popMessage($queueName, $duration = 5)
     {
-        $runtime = microtime(true) + $duration;
+        $startAt = microtime(true);
 
-        while (microtime(true) < $runtime) {
+        while (true) {
             $this->connection->beginTransaction();
 
             try {
@@ -96,8 +96,11 @@ class DoctrineDriver implements \Bernard\Driver
                 return $message;
             }
 
-            //sleep for 10 ms
             usleep(10000);
+
+            if ((microtime(true) - $startAt) >= $duration) {
+                return;
+            }
         }
     }
 

@@ -75,9 +75,9 @@ class MongoDBDriver implements \Bernard\Driver
      */
     public function popMessage($queueName, $duration = 5)
     {
-        $runtime = microtime(true) + $duration;
+        $startAt = microtime(true);
 
-        while (microtime(true) < $runtime) {
+        while (true) {
             $result = $this->messages->findAndModify(
                 ['queue' => (string) $queueName, 'visible' => true],
                 ['$set' => ['visible' => false]],
@@ -90,9 +90,11 @@ class MongoDBDriver implements \Bernard\Driver
             }
 
             usleep(10000);
-        }
 
-        return [null, null];
+            if ((microtime(true) - $startAt) >= $duration) {
+                return array(null, null);
+            }
+        }
     }
 
     /**
