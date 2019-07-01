@@ -2,7 +2,7 @@
 
 namespace Bernard;
 
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Bernard\Event\EnvelopeEvent;
 use Bernard\Event\PingEvent;
 use Bernard\Event\RejectEnvelopeEvent;
@@ -13,6 +13,7 @@ use Bernard\Event\RejectEnvelopeEvent;
 class Consumer
 {
     protected $router;
+    /** @var EventDispatcherInterface */
     protected $dispatcher;
     protected $shutdown = false;
     protected $pause = false;
@@ -76,7 +77,7 @@ class Consumer
             return true;
         }
 
-        $this->dispatcher->dispatch(BernardEvents::PING, new PingEvent($queue));
+        $this->dispatcher->dispatch(new PingEvent($queue), BernardEvents::PING);
 
         if (!$envelope = $queue->dequeue()) {
             return !$this->options['stop-when-empty'];
@@ -128,7 +129,7 @@ class Consumer
     public function invoke(Envelope $envelope, Queue $queue)
     {
         try {
-            $this->dispatcher->dispatch(BernardEvents::INVOKE, new EnvelopeEvent($envelope, $queue));
+            $this->dispatcher->dispatch(new EnvelopeEvent($envelope, $queue), BernardEvents::INVOKE);
 
             // for 5.3 support where a function name is not a callable
             call_user_func($this->router->map($envelope), $envelope->getMessage());
@@ -136,7 +137,7 @@ class Consumer
             // We successfully processed the message.
             $queue->acknowledge($envelope);
 
-            $this->dispatcher->dispatch(BernardEvents::ACKNOWLEDGE, new EnvelopeEvent($envelope, $queue));
+            $this->dispatcher->dispatch(new EnvelopeEvent($envelope, $queue), BernardEvents::ACKNOWLEDGE);
         } catch (\Throwable $error) {
             $this->rejectDispatch($error, $envelope, $queue);
         } catch (\Exception $exception) {
@@ -193,7 +194,7 @@ class Consumer
         // Previously failing jobs handling have been moved to a middleware.
         //
         // Emit an event to let others log that exception
-        $this->dispatcher->dispatch(BernardEvents::REJECT, new RejectEnvelopeEvent($envelope, $queue, $exception));
+        $this->dispatcher->dispatch(new RejectEnvelopeEvent($envelope, $queue, $exception), BernardEvents::REJECT);
 
         if ($this->options['stop-on-error']) {
             throw $exception;

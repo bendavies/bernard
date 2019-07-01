@@ -3,7 +3,7 @@
 namespace Bernard;
 
 use Bernard\Event\EnvelopeEvent;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @package Bernard
@@ -11,6 +11,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class Producer
 {
     protected $queues;
+    /** @var EventDispatcherInterface  */
     protected $dispatcher;
 
     /**
@@ -34,6 +35,6 @@ class Producer
         $queue = $this->queues->create($queueName);
         $queue->enqueue($envelope = new Envelope($message));
 
-        $this->dispatcher->dispatch(BernardEvents::PRODUCE, new EnvelopeEvent($envelope, $queue));
+        $this->dispatcher->dispatch(new EnvelopeEvent($envelope, $queue), BernardEvents::PRODUCE);
     }
 }

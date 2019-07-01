@@ -9,20 +9,21 @@
     "require": {
         "php": "^5.6 || ^7.0",
         "bernard/normalt": "~1.0",
-        "symfony/event-dispatcher": "^2.7|^3.0|^4.0",
-        "beberlei/assert": "~2.1"
+        "symfony/event-dispatcher": "^4.3",
+        "beberlei/assert": "~2.1",
+        "phpspec/phpspec": "^5.1",
+        "symfony/event-dispatcher-contracts": "^1.1"
     },
     "require-dev" : {
         "psr/log": "~1.0",
         "pimple/pimple": "~1.0",
         "predis/predis": "~0.8",
-        "symfony/console": "^2.7|^3.0|^4.0",
-        "symfony/dependency-injection": "^2.7|^3.0|^4.0",
+        "symfony/console": "^4.3",
+        "symfony/dependency-injection": "^4.3",
         "doctrine/dbal": "~2.3",
         "aws/aws-sdk-php": "~2.4|~3.0",
         "pda/pheanstalk": "~3.0",
         "php-amqplib/php-amqplib": "~2.5",
-        "phpspec/phpspec": "^2.4",
         "phpunit/phpunit": "^5.5|^6.0",
         "iron-io/iron_mq": "~4.0",
         "league/container": "~2.3",

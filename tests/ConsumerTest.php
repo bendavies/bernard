@@ -19,7 +19,7 @@ class ConsumerTest extends \PHPUnit\Framework\TestCase
     private $router;
 
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Symfony\Contracts\EventDispatcher\EventDispatcherInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     private $dispatcher;
 
@@ -33,7 +33,7 @@ class ConsumerTest extends \PHPUnit\Framework\TestCase
         $this->router = new SimpleRouter;
         $this->router->add('ImportUsers', new Fixtures\Service);
 
-        $this->dispatcher = $this->createMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
+        $this->dispatcher = $this->createMock('Symfony\Contracts\EventDispatcher\EventDispatcherInterface');
         $this->consumer = new Consumer($this->router, $this->dispatcher);
     }
 
@@ -49,13 +49,13 @@ class ConsumerTest extends \PHPUnit\Framework\TestCase
             ->willReturn($envelope);
 
         $this->dispatcher->expects($this->at(0))->method('dispatch')
-            ->with('bernard.ping', new PingEvent($queue));
+            ->with(new PingEvent($queue), 'bernard.ping');
 
         $this->dispatcher->expects($this->at(1))->method('dispatch')
-            ->with('bernard.invoke', new EnvelopeEvent($envelope, $queue));
+            ->with(new EnvelopeEvent($envelope, $queue), 'bernard.invoke');
 
         $this->dispatcher->expects($this->at(2))->method('dispatch')
-            ->with('bernard.acknowledge', new EnvelopeEvent($envelope, $queue));
+            ->with(new EnvelopeEvent($envelope, $queue), 'bernard.acknowledge');
 
         $this->assertTrue($this->consumer->tick($queue));
     }
@@ -72,7 +72,7 @@ class ConsumerTest extends \PHPUnit\Framework\TestCase
         $queue = new InMemoryQueue('queue');
 
         $this->dispatcher->expects($this->at(1))->method('dispatch')
-            ->with('bernard.reject', new RejectEnvelopeEvent($envelope, $queue, $exception));
+            ->with(new RejectEnvelopeEvent($envelope, $queue, $exception), 'bernard.reject');
 
         $this->consumer->invoke($envelope, $queue);
     }
@@ -205,22 +205,25 @@ class ConsumerTest extends \PHPUnit\Framework\TestCase
         $this->router->add('ImportReport', new Fixtures\Service);
 
         $queue = new InMemoryQueue('send-newsletter');
-        $queue->enqueue(new Envelope(new PlainMessage('ImportReport')));
+        $queue->enqueue($envelope = new Envelope(new PlainMessage('ImportReport')));
 
-        $this->dispatcher->expects(self::at(0))->method('dispatch')->with('bernard.ping');
-        $this->dispatcher->expects(self::at(1))->method('dispatch')->with('bernard.invoke');
+        $this->dispatcher->expects($this->at(0))->method('dispatch')
+            ->with(new PingEvent($queue), 'bernard.ping');
+
+        $this->dispatcher->expects($this->at(1))->method('dispatch')
+            ->with(new EnvelopeEvent($envelope, $queue), 'bernard.invoke');
 
         $this
             ->dispatcher
             ->expects(self::at(2))
             ->method('dispatch')
             ->with(
-                'bernard.reject',
                 self::callback(function (RejectEnvelopeEvent $rejectEnvelope) {
                     self::assertInstanceOf('TypeError', $rejectEnvelope->getException());
 
                     return true;
-                })
+                }),
+                'bernard.reject'
             );
 
         $this->consumer->tick($queue, ['stop-on-error' => true]);
